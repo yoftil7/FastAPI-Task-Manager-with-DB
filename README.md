@@ -48,6 +48,45 @@ This is a simple but functional Task Manager API built with FastAPI and SQLAlche
     uvicorn main:app --reload
     ```
 
+## API Endpoints
+
+This API provides the following CRUD (Create, Read, Update, Delete) endpoints for managing tasks.
+
+### Create a Task (`POST /tasks`)
+
+- **Description**: Creates a new task in the database.
+- **Request Body**: `schemas.TaskCreate` (Pydantic model)
+- **Response**: `schemas.Task` (Pydantic model) with the new task's ID.
+- **Status Code**: `201 Created`
+
+### List All Tasks (`GET /tasks`)
+
+- **Description**: Retrieves a list of all tasks.
+- **Response**: `List[schemas.Task]` (a list of Pydantic task models).
+- **Status Code**: `200 OK`
+
+### Get a Single Task (`GET /tasks/{task_id}`)
+
+- **Description**: Retrieves a single task by its unique ID.
+- **Path Parameters**: `task_id` (integer)
+- **Response**: `schemas.Task` (Pydantic model)
+- **Status Code**: `200 OK` (if found), `404 Not Found` (if not found)
+
+### Update a Task (`PUT /tasks/{task_id}`)
+
+- **Description**: Updates an existing task with new data.
+- **Path Parameters**: `task_id` (integer)
+- **Request Body**: `schemas.TaskCreate` (Pydantic model)
+- **Response**: `schemas.Task` (Pydantic model) with the updated task.
+- **Status Code**: `200 OK` (if successful), `404 Not Found` (if not found)
+
+### Delete a Task (`DELETE /tasks/{task_id}`)
+
+- **Description**: Deletes a task by its unique ID.
+- **Path Parameters**: `task_id` (integer)
+- **Response**: No content.
+- **Status Code**: `204 No Content` (if successful), `404 Not Found` (if not found)
+
 ### Usage
 
 Once the server is running, you can access the interactive API documentation by navigating to `http://127.0.0.1:8000/docs` in your web browser. From there, you can explore and test the available endpoints.
@@ -63,7 +102,6 @@ Once the server is running, you can access the interactive API documentation by 
 
 ## Planned Enhancements
 
-- [ ] Add CRUD operations: Get by ID, update, and delete tasks.
 - [ ] Implement database migrations (e.g., using Alembic) for managing schema changes.
 - [ ] Add unit and integration tests.
 - [ ] Incorporate user authentication.

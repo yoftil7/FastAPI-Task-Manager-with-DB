@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 
 
@@ -13,5 +13,4 @@ class TaskCreate(BaseModel):
 class Task(TaskCreate):
     id: int
 
-    class Config:
-        orm_mode = True  # allows returning SQLAlchemy objects directly
+    model_config = ConfigDict(from_attributes=True)
