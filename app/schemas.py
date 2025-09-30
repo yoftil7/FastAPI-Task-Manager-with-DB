@@ -37,4 +37,4 @@ class UserOut(UserBase):
 
 # returning user with tasks
 class UserWithTasks(UserOut):
-    tasks = List[Task] = []
+    tasks: List[Task] = Field(default_factory=list)

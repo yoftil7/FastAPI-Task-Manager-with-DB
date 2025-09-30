@@ -36,3 +36,15 @@ def client():
         yield c
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def create_user(client):
+    def _create_user(username="test", email="user@test.com", password="pass123"):
+        resp = client.post(
+            "/users", json={"username": username, "email": email, "password": password}
+        )
+        assert resp.status_code == 201
+        return resp.json()
+
+    return _create_user
