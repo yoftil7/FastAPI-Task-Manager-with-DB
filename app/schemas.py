@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import Optional, List
 
 
 # for creating a task, (request)
@@ -12,5 +12,29 @@ class TaskCreate(BaseModel):
 # for returning a task, -including id
 class Task(TaskCreate):
     id: int
+    owner_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# user base
+class UserBase(BaseModel):
+    username: str
+    email: EmailStr
+
+
+# Create user
+class UserCreate(UserBase):
+    password: str
+
+
+# returning a user
+class UserOut(UserBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# returning user with tasks
+class UserWithTasks(UserOut):
+    tasks = List[Task] = []
