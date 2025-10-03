@@ -50,3 +50,12 @@ def get_current_user(
     if user is None:
         raise credentials_exception
     return user
+
+
+# by queriying the db
+def get_current_admin(current_user: models.User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden: insufficient role"
+        )
+    return current_user

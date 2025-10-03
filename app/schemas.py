@@ -26,11 +26,15 @@ class UserBase(BaseModel):
 # Create user
 class UserCreate(UserBase):
     password: str = Field(..., max_length=72)
+    role: str = "user"
 
 
 # returning a user
 class UserOut(UserBase):
     id: int
+    username: str
+    email: str
+    role: str
 
     model_config = ConfigDict(from_attributes=True)
 

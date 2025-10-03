@@ -8,7 +8,7 @@ from typing import List
 from . import models, schemas
 from .database import engine, get_db, Base
 from .security import hash_password, verify_password
-from .auth import create_access_token, get_current_user
+from .auth import create_access_token, get_current_user, get_current_admin
 
 
 # Define the lifespan async context manager
@@ -64,6 +64,14 @@ def login(
     # create the token
     access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/admin/users", response_model=List[schemas.UserOut])
+def list_users(
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    return db.execute(select(models.User)).unique().scalars().all()
 
 
 @app.post("/tasks", response_model=schemas.Task, status_code=201)
