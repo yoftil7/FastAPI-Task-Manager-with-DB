@@ -25,7 +25,7 @@ class UserBase(BaseModel):
 
 # Create user
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(..., max_length=72)
 
 
 # returning a user
