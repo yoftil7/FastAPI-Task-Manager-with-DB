@@ -8,7 +8,16 @@ from typing import List
 from . import models, schemas
 from .database import engine, get_db, Base
 from .security import hash_password, verify_password
-from .auth import create_access_token, get_current_user, get_current_admin
+from jose import jwt, JWTError
+from .auth import (
+    create_access_token,
+    create_refresh_token,
+    create_password_reset_token,
+    get_current_user,
+    get_current_admin,
+    SECRET_KEY,
+    ALGORITHM,
+)
 
 
 # Define the lifespan async context manager
@@ -63,7 +72,32 @@ def login(
         raise HTTPException(status_code=401, detail="Invalid Credentials")
     # create the token
     access_token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
+
+
+@app.post("/refresh")
+def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        user_id: int = payload.get("sub")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    user = (
+        db.execute(select(models.User).where(models.User.id == user_id))
+        .scalars()
+        .first()
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_access_token = create_access_token(data={"sub": str(user.id)})
+    return {"access_token": new_access_token, "token_type": "bearer"}
 
 
 @app.get("/admin/users", response_model=List[schemas.UserOut])
@@ -164,3 +198,40 @@ def delete_task(
     db.delete(task)
     db.commit()
     return None
+
+
+@app.post("/password-reset/request")
+def request_password_reset(email: str, db: Session = Depends(get_db)):
+    user = (
+        db.execute(select(models.User).where(models.User.email == email))
+        .scalars()
+        .first()
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    reset_token = create_password_reset_token({"sub": str(user.id)})
+    reset_link = f"http://localhost:8000/reset-password?token={reset_token}"
+    print(f"Password reset link: {reset_link}")
+    return {"message": "Password reset link sent"}
+
+
+@app.post("/password-reset/confirm")
+def reset_password(token: str, new_password: str, db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Invalid token")
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    user = (
+        db.execute(select(models.User).where(models.User.id == user_id))
+        .scalars()
+        .first()
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.hashed_password = hash_password(new_password)
+    db.commit()
+    return {"message": "Password has been reset successfully"}

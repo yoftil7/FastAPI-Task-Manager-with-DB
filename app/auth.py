@@ -10,7 +10,8 @@ from . import models, database
 # JWT config
 SECRET_KEY = "supersecretkey"  # dev
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
+REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # oauth scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -59,3 +60,18 @@ def get_current_admin(current_user: models.User = Depends(get_current_user)):
             status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden: insufficient role"
         )
     return current_user
+
+
+def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    to_encode.update({"exp": expire, "type": "refresh"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_password_reset_token(data: dict, expires_delta: timedelta | None = None):
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
+    to_encode = {**data, "exp": expire}
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
