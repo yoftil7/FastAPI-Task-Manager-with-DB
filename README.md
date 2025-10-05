@@ -11,6 +11,8 @@ This is a simple but functional Task Manager API built with FastAPI and SQLAlche
 - **Data Validation:** Automatic request and response data validation using Pydantic models.
 - **Database ORM:** Uses SQLAlchemy to interact with a SQLite database.
 - **Auto-generated Docs:** Built-in interactive API documentation with Swagger UI (at `/docs`).
+- **Rate Limiting:** Protects endpoints (e.g., login) with a rate limiter of 5 requests per minute using Redis.
+- **Password Reset:** Allows users to securely reset their password.
 
 ## Setup and Run
 

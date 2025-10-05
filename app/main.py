@@ -1,5 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
+import redis.asyncio as redis
+
 from contextlib import asynccontextmanager
 from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
@@ -24,7 +28,12 @@ from .auth import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    redis_connection = redis.from_url(
+        "redis://localhost", encoding="utf-8", decode_response=True
+    )
+    await FastAPILimiter.init(redis_connection)
     yield
+    redis_connection.close()
     # Shutdown logic (optional)
     # Add any cleanup code here
 
@@ -46,7 +55,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 # login route
-@app.post("/login")
+@app.post("/login", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
@@ -200,7 +209,9 @@ def delete_task(
     return None
 
 
-@app.post("/password-reset/request")
+@app.post(
+    "/password-reset/request", dependencies=[Depends(RateLimiter(times=3, seconds=600))]
+)
 def request_password_reset(email: str, db: Session = Depends(get_db)):
     user = (
         db.execute(select(models.User).where(models.User.email == email))
