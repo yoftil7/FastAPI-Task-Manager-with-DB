@@ -7,7 +7,7 @@ This is a simple but functional Task Manager API built with FastAPI and SQLAlche
 ## Features
 
 - **Create Tasks:** Add new tasks with a title, completion status, and priority.
-- **List All Tasks:** Retrieve a list of all tasks stored in the database.
+- **List All Tasks:** Retrieves a paginated list of tasks for the current user, including total record count.
 - **Data Validation:** Automatic request and response data validation using Pydantic models.
 - **Database ORM:** Uses SQLAlchemy to interact with a SQLite database.
 - **Auto-generated Docs:** Built-in interactive API documentation with Swagger UI (at `/docs`).

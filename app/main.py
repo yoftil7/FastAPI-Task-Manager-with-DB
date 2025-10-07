@@ -5,11 +5,12 @@ from fastapi_limiter.depends import RateLimiter
 import redis.asyncio as redis
 
 from contextlib import asynccontextmanager
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func
 from sqlalchemy.orm import Session
 from typing import List
 
 from . import models, schemas
+from .dependencies import pagination_params
 from .database import engine, get_db, Base
 from .security import hash_password, verify_password
 from jose import jwt, JWTError
@@ -130,14 +131,35 @@ def create_task(
     return db_task
 
 
-@app.get("/tasks", response_model=List[schemas.Task])
+@app.get("/tasks", response_model=schemas.PaginatedResponse[schemas.Task])
 def list_tasks(
-    current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)
+    pagination: dict = Depends(pagination_params),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return (
-        db.execute(select(models.Task).where(models.Task.owner_id == current_user.id))
+    skip, limit = pagination["skip"], pagination["limit"]
+
+    total = db.scalar(
+        select(func.count())
+        .select_from(models.Task)
+        .where(models.Task.owner_id == current_user.id)
+    )
+    tasks = (
+        db.execute(
+            select(models.Task)
+            .where(models.Task.owner_id == current_user.id)
+            .offset(skip)
+            .limit(limit)
+        )
         .scalars()
         .all()
+    )
+
+    return schemas.PaginatedResponse(
+        total=total,
+        skip=skip,
+        limit=limit,
+        data=tasks,
     )
 
 

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import Optional, List
+from typing import Optional, List, Generic, TypeVar
+from pydantic.generics import GenericModel
 
 
 # for creating a task, (request)
@@ -9,7 +10,7 @@ class TaskCreate(BaseModel):
     priority: Optional[int] = None
 
 
-# for returning a task, -including id
+# for returning a task, including id
 class Task(TaskCreate):
     id: int
     owner_id: int
@@ -42,3 +43,13 @@ class UserOut(UserBase):
 # returning user with tasks
 class UserWithTasks(UserOut):
     tasks: List[Task] = Field(default_factory=list)
+
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(GenericModel, Generic[T]):
+    total: int
+    skip: int
+    limit: int
+    data: List[T]
