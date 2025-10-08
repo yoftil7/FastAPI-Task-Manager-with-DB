@@ -7,10 +7,10 @@ import redis.asyncio as redis
 from contextlib import asynccontextmanager
 from sqlalchemy import select, or_, func
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from . import models, schemas
-from .dependencies import pagination_params
+from .dependencies import pagination_params, sorting_params, filtering_params
 from .database import engine, get_db, Base
 from .security import hash_password, verify_password
 from jose import jwt, JWTError
@@ -133,27 +133,37 @@ def create_task(
 
 @app.get("/tasks", response_model=schemas.PaginatedResponse[schemas.Task])
 def list_tasks(
+    filters: dict = Depends(filtering_params),
+    sorting: dict = Depends(sorting_params),
     pagination: dict = Depends(pagination_params),
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     skip, limit = pagination["skip"], pagination["limit"]
 
-    total = db.scalar(
-        select(func.count())
-        .select_from(models.Task)
-        .where(models.Task.owner_id == current_user.id)
-    )
-    tasks = (
-        db.execute(
-            select(models.Task)
-            .where(models.Task.owner_id == current_user.id)
-            .offset(skip)
-            .limit(limit)
-        )
-        .scalars()
-        .all()
-    )
+    # Base query (only user’s tasks)
+    query = select(models.Task).where(models.Task.owner_id == current_user.id)
+
+    # ✅ Apply filters
+    if "completed" in filters:
+        query = query.where(models.Task.completed == filters["completed"])
+    if "priority" in filters:
+        query = query.where(models.Task.priority == filters["priority"])
+    if "title" in filters:
+        query = query.where(models.Task.title.ilike(f"%{filters['title']}%"))
+
+    # ✅ Count total (for pagination metadata)
+    total = db.scalar(select(func.count()).select_from(query.subquery()))
+
+    # ✅ Apply sorting
+    sort_column = getattr(models.Task, sorting["sort_by"])
+    if sorting["order"] == "desc":
+        query = query.order_by(sort_column.desc())
+    else:
+        query = query.order_by(sort_column.asc())
+
+    # ✅ Apply pagination
+    tasks = db.execute(query.offset(skip).limit(limit)).scalars().all()
 
     return schemas.PaginatedResponse(
         total=total,
