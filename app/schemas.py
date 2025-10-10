@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import Optional, List, Generic, TypeVar
-from pydantic.generics import GenericModel
 
 
 # for creating a task, (request)
@@ -48,7 +47,7 @@ class UserWithTasks(UserOut):
 T = TypeVar("T")
 
 
-class PaginatedResponse(GenericModel, Generic[T]):
+class PaginatedResponse(BaseModel, Generic[T]):
     total: int
     skip: int
     limit: int

@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
 import redis.asyncio as redis
+import logging
 
 from contextlib import asynccontextmanager
 from sqlalchemy import select, or_, func
@@ -24,17 +25,25 @@ from .auth import (
     ALGORITHM,
 )
 
+logger = logging.getLogger(__name__)
+
 
 # Define the lifespan async context manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    redis_connection = redis.from_url(
-        "redis://localhost", encoding="utf-8", decode_response=True
-    )
-    await FastAPILimiter.init(redis_connection)
+    try:
+        redis_connection = redis.from_url(
+            "redis://localhost", encoding="utf-8", decode_responses=True
+        )
+        await FastAPILimiter.init(redis_connection)
+        logger.info("✅ Redis rate limiter initialized successfully.")
+    except Exception as e:
+        logger.warning(f"⚠️ Skipping Redis initialization: {e}")
+        redis_connection = None
     yield
-    redis_connection.close()
+    if redis_connection:
+        await redis_connection.aclose()
     # Shutdown logic (optional)
     # Add any cleanup code here
 
