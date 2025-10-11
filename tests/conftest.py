@@ -73,3 +73,24 @@ def auth_header(test_user):
     """Return an Authorization header for test_user."""
     token = create_access_token(data={"sub": str(test_user.id)})
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="function")
+def admin_user(db):
+    user = models.User(
+        username="admin_tester",
+        email="admin@example.com",
+        hashed_password="$2b$12$zZxZc3c6fUQxA8RHZ6It3OqZo2CQAc9/Jg8Oe7dFEl9/d5hRj8eQS",  # "password"
+        role="admin",
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture(scope="function")
+def admin_auth_header(admin_user):
+    """Return Authorization header for admin user."""
+    token = create_access_token(data={"sub": str(admin_user.id)})
+    return {"Authorization": f"Bearer {token}"}
