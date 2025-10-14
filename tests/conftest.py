@@ -94,3 +94,17 @@ def admin_auth_header(admin_user):
     """Return Authorization header for admin user."""
     token = create_access_token(data={"sub": str(admin_user.id)})
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="function")
+def sample_tasks(client, auth_header):
+    """Create multiple tasks for the authenticated user."""
+    tasks = [
+        {"title": "Task A", "completed": False, "priority": 1},
+        {"title": "Task B", "completed": True, "priority": 3},
+        {"title": "Task C", "completed": False, "priority": 2},
+        {"title": "Task D", "completed": True, "priority": 1},
+    ]
+    for task in tasks:
+        client.post("/tasks", json=task, headers=auth_header)
+    return auth_header

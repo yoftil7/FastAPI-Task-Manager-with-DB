@@ -55,3 +55,41 @@ def test_delete_task(client, auth_header):
     get_resp = client.get(f"/tasks/{task_id}", headers=auth_header)
     assert get_resp.status_code == 404
     assert get_resp.json()["detail"] == "Task not found"
+
+
+def test_pagination(client, sample_tasks):
+    """Should return paginated results based on skip & limit."""
+    headers = sample_tasks
+    resp = client.get("/tasks?skip=0&limit=2", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert len(data) == 2
+    assert isinstance(data[0], dict)
+
+
+def test_filter_by_priority(client, sample_tasks):
+    """Should return tasks matching priority filter."""
+    headers = sample_tasks
+    resp = client.get("/tasks?priority=1", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert all(task["priority"] == 1 for task in data)
+    assert len(data) == 2
+
+
+def test_sorting_desc_by_priority(client, sample_tasks):
+    """Should sort tasks by priority descending."""
+    headers = sample_tasks
+    resp = client.get("/tasks?sort_by=priority&order=desc", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    priorities = [t["priority"] for t in data]
+    assert priorities == sorted(priorities, reverse=True)
+
+
+def test_sorting_invalid_field(client, sample_tasks):
+    """Should return 400 if invalid sort field is given."""
+    headers = sample_tasks
+    resp = client.get("/tasks?sort_by=invalid", headers=headers)
+    assert resp.status_code == 400
+    assert "Invalid sort field" in resp.json()["detail"]
