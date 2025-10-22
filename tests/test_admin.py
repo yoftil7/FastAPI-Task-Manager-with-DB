@@ -23,4 +23,3 @@ def test_unauthenticated_user_cannot_access_admin_routes(client):
     """Unauthenticated requests should get a 401 Unauthorized."""
     resp = client.get("/admin/users")
     assert resp.status_code == 401
-    print(resp.json()["detail"])

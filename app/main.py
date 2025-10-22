@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
@@ -15,6 +15,7 @@ from .dependencies import pagination_params, sorting_params, filtering_params
 from .database import engine, get_db, Base
 from .security import hash_password, verify_password
 from jose import jwt, JWTError
+from .utils import send_password_reset_email
 from .auth import (
     create_access_token,
     create_refresh_token,

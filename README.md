@@ -14,6 +14,7 @@ This is a simple but functional Task Manager API built with FastAPI and SQLAlche
 - **Auto-generated Docs:** Built-in interactive API documentation with Swagger UI (at `/docs`).
 - **Rate Limiting:** Protects endpoints (e.g., login) with a rate limiter of 5 requests per minute using Redis.
 - **Password Reset:** Allows users to securely reset their password.
+- **Background Tasks:** Implemented background tasks to asynchronously handle password reset emails, ensuring a faster and more responsive API for users.
 
 ## Setup and Run
 
